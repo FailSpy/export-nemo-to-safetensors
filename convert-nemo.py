@@ -7,6 +7,7 @@ from safetensors.torch import save_file
 import gc
 from tqdm import tqdm
 from collections import OrderedDict
+import json
 
 layer_mappings = {
         'layers.mlp.linear_fc1.layer_norm_bias': 'model.layers.{lnum}.mlp.input_layernorm.weight',
@@ -99,6 +100,14 @@ def convert_nemo(path: Path):
         print("saved",fname)
         if layer == 0:
             del model_map['embedding.word_embeddings.weight']
+
+    print("done, writing index")
+    safetensor_index = OrderedDict()
+    safetensor_index['metadata'] = OrderedDict()
+    safetensor_index['metadata']['total_size'] = 0
+    safetensor_index['weight_map'] = index
+    with open('model.safetensors.index.json','w') as f:
+        f.write(json.dumps(safetensor_index))
 
 if __name__ == "__main__":
     convert_nemo(Path.cwd())
