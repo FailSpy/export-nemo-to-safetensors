@@ -10,8 +10,8 @@ from collections import OrderedDict
 import json
 
 layer_mappings = {
-        'layers.mlp.linear_fc1.layer_norm_bias': 'model.layers.{lnum}.mlp.input_layernorm.weight',
-        'layers.mlp.linear_fc1.layer_norm_weight': 'model.layers.{lnum}.mlp.input_layernorm.bias',
+        'layers.mlp.linear_fc1.layer_norm_bias': 'model.layers.{lnum}.mlp.input_layernorm.bias',
+        'layers.mlp.linear_fc1.layer_norm_weight': 'model.layers.{lnum}.mlp.input_layernorm.weight',
         'layers.mlp.linear_fc1.weight': 'model.layers.{lnum}.mlp.up_proj.weight',
         'layers.mlp.linear_fc2.weight': 'model.layers.{lnum}.mlp.down_proj.weight',
         'layers.self_attention.linear_qkv.weight': 'model.layers.{lnum}.self_attn.qkv_proj.weight',
@@ -67,9 +67,9 @@ def convert_nemo(path: Path):
     index = OrderedDict()
 
     # we store the output layer at the end in its own file, and keep it at top of index
-    index['lm_head.weight'] = f"model-{layer_count+1:05}-of-{layer_count+1:05}"
+    index['lm_head.weight'] = f"model-{layer_count+1:05}-of-{layer_count+1:05}.safetensors"
     output_layer = convert_to_torch(special_layers['output_layer.weight'])
-    save_file({'lm_head.weight':output_layer},f"model-{layer_count+1:05}-of-{layer_count+1:05}")
+    save_file({'lm_head.weight':output_layer},f"model-{layer_count+1:05}-of-{layer_count+1:05}.safetensors")
 
     # now that we have instances to each, let's store things by order of layers for better loading
     for layer in range(layer_count):
@@ -88,7 +88,7 @@ def convert_nemo(path: Path):
             if arr.shape[0] < layer:
                 lnum = 0
             k = layer_mappings[key].replace("{lnum}",str(layer))
-            shared_state_dict[k] = convert_to_torch(arr[lnum,:])
+            sharded_state_dict[k] = convert_to_torch(arr[lnum,:])
             index[k] = fname
 
         save_file(sharded_state_dict,fname)
